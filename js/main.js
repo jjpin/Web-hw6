@@ -29,6 +29,11 @@ var fbProvider = new firebase.auth.FacebookAuthProvider();
 
 $("#signin").click(function () {
   // 登入後的頁面行為
+  $("#upload").css("display","block");
+  $("#signin").css("display","none");
+  $("#signout").css("display","block");
+  showAllItems();
+
   firebase.auth().signInWithPopup(fbProvider).then(function(result){
     currentUser.displayName = result.user.displayName;
     currentUser.uid = result.user.uid;
@@ -36,6 +41,7 @@ $("#signin").click(function () {
   }).catch(function(error){
     var errorCode = error.code;
     var errorMessa = error.message;
+    alert("fail to login");
     console.log(errorCode, errorMessa);
   })
 })
@@ -50,36 +56,32 @@ $("#signout").click(function () {
 
 //監測登出&登入
 firebase.auth().onAuthStateChanged(function(user){
-  if(user){
-
+  if(user.getAuth()){
+    users.orderByKey().equalTo(users.getAuth().uid).once("value",function (snapshot)
   }else{
-  
-  }
-})
-
-$("#submitData").click(function () {
-    // 上傳新商品
-    //創造資料
-    firebase.database().ref("items/firstItems").set(data);
-    firebase.database().ref("items/firstItems").push(data);
-
-    //存取資料
-    firebase.database().ref("items").orderByChild("price").startAt(10000).once("value", reProduceAll);
+    $("#upload").css("display","none");
+    $("#signin").css("display","block");
+    $("#signout").css("display","none");
+  })
 });
 
-$("#editData").click(function () {
+$("#submitData").click(function saveItems(title, price, descrip, pic) {
+    // 上傳新商品
+    firebase.database().ref("items").push({title:title,price:price,descrip:descrip,imgD:pic,userTime:new Date($.now()).toLocaleString()});
+});
+
+$("#editData").click(function updateItem(title, price, descrip, pic){
     // 編輯商品資訊
     //更新資料
-    var data = {};
+    var data = {title, price, descrip, pic};
     data["/messages/" + uid + "/message"] = word;
     data["/users/" + uid + "/record"] = word;
     firebase.database().ref().update(messa);
 })
 
-$("#removeData").click(function () {
+$("#removeData").click(function removeItems() {
     //刪除商品
-    //刪除資料
-    firebase.database().ref("items/firstItems").remove();
+    firebase.database().ref("items").remove();
 })
 
 
@@ -89,8 +91,18 @@ $("#removeData").click(function () {
     1. 顯示所有商品
     2. 顯示價格高於 NT$10000 的商品
     3. 顯示價格低於 NT$9999 的商品
-
 */
+$('#all').click(function showAllItems(){
+  items.on("value",readItems);
+})
+
+$('#10000up').click(function showExpItems(){
+  items.orderByChild("price").startAt(10000).on("value",readItems);
+})
+
+$('#9999down').click(function showCheapItems(){
+  items.orderByChild("price").endAt(9999).on("value",readItems);
+})
 
 
 function logginOption(isLoggin) {
