@@ -7,8 +7,8 @@
   firebase.initializeApp(config);
     
 ImageDealer.REF = firebase;
-var currentUser ;
-
+var currentUser = {displayName:"", uid:"", photoURL:""};
+var uploadModal = new UploadModal($('#upload-modal'));
 
 new Firebase("https://dazzling-inferno-6227.firebaseio.com/items");
 var items = firebase.database().ref("items");
@@ -23,6 +23,10 @@ var items = firebase.database().ref("items");
 */
 
 var fbProvider = new firebase.auth.FacebookAuthProvider();
+
+/*var viewModal = new ViewModal($('#view-modal'));
+var uploadModal = new UploadModal($('#upload-modal'));
+var currentItem;*/
 
 $("#signin").click(function () {
   // 登入後的頁面行為
@@ -45,6 +49,10 @@ $("#signin").click(function () {
 $("#signout").click(function () {
     // 登出後的頁面行為
     firebase.auth().signOut().then(function(){
+      currentUser.displayName = "";
+      currentUser.uid = "";
+      currentUser.photoURL = "";
+
       $("#upload").css("display","none");
       $("#signin").css("display","block");
       $("#signout").css("display","none");
@@ -55,8 +63,8 @@ $("#signout").click(function () {
 
 //監測登出&登入
 /*firebase.auth().onAuthStateChanged(function(user){
-  if(user.getAuth()){
-    users.orderByKey().equalTo(users.getAuth().uid).once("value",function (snapshot)
+  if(user){
+    users.orderByKey().equalTo(users.getAuth().uid).once("value",function (snapshot))
   }else{
     $("#upload").css("display","none");
     $("#signin").css("display","block");
@@ -71,6 +79,7 @@ var nowItem = "";
 $("#submitData").click(function saveItems(title, price, descrip, pic) {
     var dataArr = $("#item-info").serializeArray();
     var picFile = $("#picData")[0].files[0];
+
     var picTrans = new FileReader();
     if (dataArr[0].value != null && dataArr[1].value != null && dataArr[2].value != null && picFile ) {
     //check if it is picture(not yet)
@@ -293,18 +302,18 @@ function createIntro(title, price, author) {
 
 // show the thumbnail (not yet)
 function picShow(event) {
-//   var file = event.target.files[0];
-//   var picTrans = new FileReader();
-//   picTrans.onload = (function (imge) {return function (e) {
-//     imge.src = e.target.result;
-//     console.log(e.target.result);
-//   }})(file);
-//   //console.log(file);
-//   picTrans.readAsDataURL(file);
-//   //console.log(picTrans.readAsDataURL(file).result);
+   var file = event.target.files[0];
+    var picTrans = new FileReader();
+   picTrans.onload = (function (imge) {return function (e) {
+     imge.src = e.target.result;
+     console.log(e.target.result);
+   }})(file);
+   console.log(file);
+   picTrans.readAsDataURL(file);
+   //console.log(picTrans.readAsDataURL(file).result);
 }
 //--------------------------------------------------------------------
-firebase.database().ref("items").once("value",reProduceAll);
+//firebase.database().ref("items").once("value",reProduceAll);
 //---------------------------------------------------------------------
 $("#submitData").click(function (event) {
   var dataArr = $("#item-info").serializeArray();
