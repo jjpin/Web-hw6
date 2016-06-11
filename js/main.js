@@ -62,15 +62,18 @@ $("#signout").click(function () {
 })
 
 //監測登出&登入
-/*firebase.auth().onAuthStateChanged(function(user){
+firebase.auth().onAuthStateChanged(function(user){
   if(user){
-    users.orderByKey().equalTo(users.getAuth().uid).once("value",function (snapshot))
+    $("#upload").css("display","block");
+    $("#signin").css("display","none");
+    $("#signout").css("display","block");
+    firebase.database().ref("items").once("value",reProduceAll);
   }else{
     $("#upload").css("display","none");
     $("#signin").css("display","block");
     $("#signout").css("display","none");
-  })
-})*/
+  }
+})
 
 
 
