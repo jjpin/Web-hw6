@@ -1,4 +1,4 @@
-  var config = {
+    var config = {
     apiKey: "AIzaSyBEDBMlFSszVxY_jlHWdKxIAQW5J07JYSA",
     authDomain: "dazzling-inferno-6227.firebaseapp.com",
     databaseURL: "https://dazzling-inferno-6227.firebaseio.com",
@@ -7,10 +7,11 @@
   firebase.initializeApp(config);
     
 ImageDealer.REF = firebase;
-var currentUser = {displayName:"", uid:"", photoURL:""};
+var currentUser = {displayName: "", uid: "", photoURL: ""};
 var uploadModal = new UploadModal($('#upload-modal'));
+var viewModal = new ViewModal($("#view-modal"));
 
-new Firebase("https://dazzling-inferno-6227.firebaseio.com/items");
+//new Firebase("https://dazzling-inferno-6227.firebaseio.com/items");
 var items = firebase.database().ref("items");
 
 /*
@@ -22,13 +23,13 @@ var items = firebase.database().ref("items");
     登入/當初狀態顯示可使用下方 logginOption function
 */
 
-var fbProvider = new firebase.auth.FacebookAuthProvider();
-
-/*var viewModal = new ViewModal($('#view-modal'));
+var viewModal = new ViewModal($('#view-modal'));
 var uploadModal = new UploadModal($('#upload-modal'));
-var currentItem;*/
+var currentItem;
+
 
 $("#signin").click(function () {
+  var fbProvider = new firebase.auth.FacebookAuthProvider();
   // 登入後的頁面行為
   $("#upload").css("display","block");
   $("#signin").css("display","none");
@@ -39,6 +40,8 @@ $("#signin").click(function () {
     currentUser.displayName = result.user.displayName;
     currentUser.uid = result.user.uid;
     currentUser.photoURL = result.user.photoURL;
+
+    var userData = firebase.database().ref("users/" + currentUser.uid);
   }).catch(function(error){
     var errorCode = error.code;
     var errorMessa = error.message;
@@ -67,6 +70,9 @@ firebase.auth().onAuthStateChanged(function(user){
     $("#upload").css("display","block");
     $("#signin").css("display","none");
     $("#signout").css("display","block");
+    currentUser.displayName = user.displayName;
+    currentUser.uid = user.uid;
+    currentUser.photoURL = user.photoURL;
     firebase.database().ref("items").once("value",reProduceAll);
   }else{
     $("#upload").css("display","none");
@@ -79,44 +85,57 @@ firebase.auth().onAuthStateChanged(function(user){
 
 var nowItem = "";
 
-$("#submitData").click(function saveItems(title, price, descrip, pic) {
+$("#submitData").click(function() {
     var dataArr = $("#item-info").serializeArray();
     var picFile = $("#picData")[0].files[0];
 
-    var picTrans = new FileReader();
-    if (dataArr[0].value != null && dataArr[1].value != null && dataArr[2].value != null && picFile ) {
+    if (dataArr[0].value != null && dataArr[1].value != null && dataArr[2].value != null && picFile) {
+      firebase.database().ref("items").push({
+            title: dataArr[0].value, 
+            price: parseInt(dataArr[1].value), 
+            descrip: dataArr[2].value, 
+            seller: currentUser.uid,
+            userTime: new Date($.now()).toLocaleString()});
+
     //check if it is picture(not yet)
-      picTrans.readAsDataURL(picFile);
-      picTrans.onloadend = (function (imge) {return function (e) {
-          imge.src = e.target.result;
-          saveItems(dataArr[0].value, dataArr[1].value, dataArr[2].value, e.target.result);
-      }})(picFile);
+      uploadModal.submitPic(currentUser.uid);
+
       $("#upload-modal").modal('hide');
+    }else{
+      alert("請填完喔!!!");
     }
-    // 上傳新商品
-    firebase.database().ref("items").push({title:title, price: parseInt(price), descrip:descrip, photo:pic, userTime: new Date($.now()).toLocaleString()});
 });
 
-$("#submitData").click(function (itemData, key){
-  var picPart = createPic(itemData.imgD, key);
-  var wordPart = createIntro(itemData.title, itemData.price, "anonymous");
-  var itemView = $("<div>",{
-    class: "sale-item",
-  }).append(picPart).append(wordPart);
-  return itemView;
-})
 
-
-$("#editData").click(function updateItem(title, price, descrip, pic){
+$("#editData").click(function(){
     // 編輯商品資訊
-    var data = {title, price, descrip, pic};
-    data["/messages/" + uid + "/message"] = word;
-    data["/users/" + uid + "/record"] = word;
-    firebase.database().ref().update(messa);
+    var dataArr = $("#item-info").serializeArray();
+    var picFile = $("#picData")[0].files[0];
+    uploadModal.itemKey = nowItem;
+    
+    if (dataArr[0].value != null && dataArr[1].value != null && dataArr[2].value != null) {
+      firebase.database().ref("items/" + nowItem).update({
+            title: dataArr[0].value, 
+            price: parseInt(dataArr[1].value), 
+            descrip: dataArr[2].value, 
+            seller: currentUser.uid,
+      });
+
+      if(picFile){
+        uploadModal.submitPic(currentUser.uid);
+      }
+
+      items.once("value",reProduceAll);
+      $("#upload-modal").modal('hide');
+    }
+
 })
+
 
 $("#removeData").click(function removeItems() {
-    firebase.database().ref("items").remove();
+    uploadModal.itemKey = nowItem;
+    firebase.database().ref("items/" + nowItem).remove();
+    $("#upload-modal").modal('hide');
 })
 
 
@@ -227,7 +246,7 @@ function generateDialog(diaData, messageBox) {
 
 //------------------------------------------------------------------------
 function getItemByURL(suburl) {
-  return new Firebase("https://<YOUR ID>.firebaseio.com/"+suburl);
+  return new Firebase("https://dazzling-inferno-6227.firebaseio.com/"+suburl);
 }
 
 
@@ -239,7 +258,7 @@ function reArrangeItems(snapshot, former) {
 
 function createItems(itemData,key) {
   var picPart = createPic(itemData.imgD, key);
-  var wordPart = createIntro(itemData.title, itemData.price, "anonymous");
+  var wordPart = createIntro(itemData.title, itemData.price, currentUser.displayName);
   var itemView = $("<div>",{
     class: "sale-item",
   }).append(picPart).append(wordPart);
@@ -318,7 +337,7 @@ function picShow(event) {
 //--------------------------------------------------------------------
 //firebase.database().ref("items").once("value",reProduceAll);
 //---------------------------------------------------------------------
-$("#submitData").click(function (event) {
+/*$("#submitData").click(function (event) {
   var dataArr = $("#item-info").serializeArray();
   var picFile = $("#picData")[0].files[0];
   var picTrans = new FileReader();
@@ -362,7 +381,7 @@ $("#price-select span:nth-of-type(2)").click(function (event) {
 
 $("#price-select span:nth-of-type(3)").click(function (event) {
   selectCheapItems();
-});
+});*/
 
 $("#upload-modal").on('hidden.bs.modal', function (e) {
   $("#item-info :input").val("");
