@@ -136,6 +136,7 @@ $("#editData").click(function(){
 $("#removeData").click(function removeItems() {
     uploadModal.itemKey = nowItem;
     firebase.database().ref("items/" + nowItem).remove();
+    items.once("value",reProduceAll);
     $("#upload-modal").modal('hide');
 })
 
