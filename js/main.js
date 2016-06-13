@@ -99,7 +99,8 @@ $("#submitData").click(function() {
 
     //check if it is picture(not yet)
       uploadModal.submitPic(currentUser.uid);
-
+        
+      items.once("value",reProduceAll);    
       $("#upload-modal").modal('hide');
     }else{
       alert("請填完喔!!!");
